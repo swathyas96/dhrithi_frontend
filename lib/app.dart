@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:dhrithi_frontend/api/api.dart';
 import 'package:dhrithi_frontend/api/ocr.dart';
 import 'package:dhrithi_frontend/models/upload_ocr.dart';
@@ -33,7 +32,6 @@ class _HomeState extends State<Home> {
   UploadOCRModel? ocr;
   bool isUploading = false;
   TextEditingController extractedTextController = TextEditingController();
-  final QuillController _controller = QuillController.basic();
   Future<void> uploadFile() async {
     result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -46,9 +44,9 @@ class _HomeState extends State<Home> {
     if (file != null) {
       ocr = await uploadOCR(file!);
       setState(() {
-        extractedTextController.text = ocr!.predictedText!.replaceAll('\n', ' ');
-        _controller.document.insert(0, ocr!.predictedText!.replaceFirst(" ", ""));
         isUploading = false;
+        extractedTextController.text =
+            ocr != null ? ocr!.predictedText!.replaceAll('\n', ' ') : '';
       });
     }
   }
@@ -56,62 +54,65 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: isUploading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (ocr != null) ...[
-                        Column(
-                          children: [
-                            QuillToolbar.basic(controller: _controller),
-                            Expanded(child: QuillEditor.basic(
-                              controller: _controller, 
-                              readOnly: false))
-                          ],
-                        ),
-                        // Text(file!.path),
-                        SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.45,
-                            height: MediaQuery.of(context).size.height * 0.9,
-                            child: Image.network('$baseURL${ocr!.file!}')),
-                        const SizedBox(width: 32),
-                        SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.45,
-                            // child: Text(ocr!.predictedText!)
-                            child: TextFormField(
+        body: isUploading
+            ? const Center(child: CircularProgressIndicator())
+            : SafeArea(
+                child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Center(child: SingleChildScrollView(
+                        child: LayoutBuilder(builder: (context, constraint) {
+                      if (constraint.maxWidth < 700) {
+                        return Column(children: [
+                          if (ocr != null) ...[
+                            // Text(file!.path),
+                            Image.network('$baseURL${ocr!.file!}'),
+                            const SizedBox(height: 32),
+                            TextFormField(
+                                minLines: 2,
                                 maxLines: 30,
                                 controller: extractedTextController,
                                 decoration: const InputDecoration(
-                                    border: OutlineInputBorder())))
-                      ]
-                    ],
-                  ),
-                ),
+                                    border: OutlineInputBorder()))
+                          ]
+                        ]);
+                      } else {
+                        return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              if (ocr != null) ...[
+                                // Text(file!.path),
+                                SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    height: MediaQuery.of(context).size.height *
+                                        0.9,
+                                    child:
+                                        Image.network('$baseURL${ocr!.file!}')),
+                                const SizedBox(width: 32),
+                                SizedBox(
+                                    width: MediaQuery.of(context).size.width *
+                                        0.45,
+                                    // child: Text(ocr!.predictedText!)
+                                    child: TextFormField(
+                                        minLines: 2,
+                                        maxLines: 30,
+                                        controller: extractedTextController,
+                                        decoration: const InputDecoration(
+                                            border: OutlineInputBorder())))
+                              ]
+                            ]);
+                      }
+                    })))),
               ),
+        floatingActionButton: FloatingActionButton.extended(
+            label: const Text(
+              'Upload File',
+              style: TextStyle(textBaseline: TextBaseline.alphabetic),
             ),
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.all(32.0),
-        child: FloatingActionButton.extended(
-          label: const Text(
-            'Upload your image',
-            style: TextStyle(textBaseline: TextBaseline.alphabetic),
-          ),
-          backgroundColor: const Color.fromARGB(255, 243, 238, 238),
-          icon: const Icon(Icons.upload_outlined),
-          onPressed: () {
-            uploadFile();
-          },
-          elevation: 0,
-          hoverColor: const Color.fromARGB(162, 242, 109, 153),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
+            icon: const Icon(Icons.upload_outlined),
+            onPressed: () => uploadFile()),
+        floatingActionButtonLocation:
+            FloatingActionButtonLocation.centerDocked);
   }
 }
