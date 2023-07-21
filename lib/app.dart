@@ -1,9 +1,9 @@
 import 'dart:io';
-import 'package:dhrithi_frontend/api/api.dart';
 import 'package:dhrithi_frontend/api/ocr.dart';
 import 'package:dhrithi_frontend/models/upload_ocr.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart' as fq;
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -32,6 +32,7 @@ class _HomeState extends State<Home> {
   UploadOCRModel? ocr;
   bool isUploading = false;
   TextEditingController extractedTextController = TextEditingController();
+  final fq.QuillController _quillController = fq.QuillController.basic();
   Future<void> uploadFile() async {
     result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -47,6 +48,9 @@ class _HomeState extends State<Home> {
         isUploading = false;
         extractedTextController.text =
             ocr != null ? ocr!.predictedText!.replaceAll('\n', ' ') : '';
+        _quillController.clear();
+        _quillController.document.insert(
+            0, ocr != null ? ocr!.predictedText!.replaceAll('\n', ' ') : '');
       });
     }
   }
@@ -59,52 +63,16 @@ class _HomeState extends State<Home> {
             : SafeArea(
                 child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Center(child: SingleChildScrollView(
-                        child: LayoutBuilder(builder: (context, constraint) {
-                      if (constraint.maxWidth < 700) {
-                        return Column(children: [
-                          if (ocr != null) ...[
-                            // Text(file!.path),
-                            Image.network('$baseURL${ocr!.file!}'),
-                            const SizedBox(height: 32),
-                            TextFormField(
-                                minLines: 2,
-                                maxLines: 30,
-                                controller: extractedTextController,
-                                decoration: const InputDecoration(
-                                    border: OutlineInputBorder()))
-                          ]
-                        ]);
-                      } else {
-                        return Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              if (ocr != null) ...[
-                                // Text(file!.path),
-                                SizedBox(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    height: MediaQuery.of(context).size.height *
-                                        0.9,
-                                    child:
-                                        Image.network('$baseURL${ocr!.file!}')),
-                                const SizedBox(width: 32),
-                                SizedBox(
-                                    width: MediaQuery.of(context).size.width *
-                                        0.45,
-                                    // child: Text(ocr!.predictedText!)
-                                    child: TextFormField(
-                                        minLines: 2,
-                                        maxLines: 30,
-                                        controller: extractedTextController,
-                                        decoration: const InputDecoration(
-                                            border: OutlineInputBorder())))
-                              ]
-                            ]);
-                      }
-                    })))),
-              ),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      if (ocr != null) ...[
+                        fq.QuillToolbar.basic(controller: _quillController),
+                        Expanded(
+                            child: fq.QuillEditor.basic(
+                                controller: _quillController,
+                                readOnly: false // true for view only mode
+                                ))
+                      ]
+                    ]))),
         floatingActionButton: FloatingActionButton.extended(
             label: const Text(
               'Upload File',
