@@ -14,8 +14,9 @@ Future<UploadOCRModel?> uploadOCR(File file) async {
     "filename": fileName,
     "file": await MultipartFile.fromFile(file.path,
         filename: fileName,
-        contentType:
-            MediaType('image', file.uri.pathSegments.last.split('.').last)),
+        contentType: file.uri.pathSegments.last.split('.').last == 'pdf'
+            ? MediaType('application', 'pdf')
+            : MediaType('image', file.uri.pathSegments.last.split('.').last)),
   });
   try {
     final response = await dio.post("/api/document/upload", data: formData);
@@ -31,3 +32,37 @@ Future<UploadOCRModel?> uploadOCR(File file) async {
   return null;
 }
 
+Future<String?> extractText(int pageNumber, int ocrID) async {
+  FormData formData =
+      FormData.fromMap({"upload_ocr_id": ocrID, "page_number": pageNumber});
+  try {
+    final response =
+        await dio.post("/api/document/extract_pdf", data: formData);
+    if (response.statusCode == 200) {
+      return response.data['text'];
+    } else {
+      log('${response.statusCode} : ${response.data.toString()}');
+      throw response.statusCode!;
+    }
+  } catch (error) {
+    log(error.toString());
+  }
+  return null;
+}
+Future<String?> exportAsDOC(File file) async {
+  FormData formData = FormData.fromMap({
+    "file": await MultipartFile.fromFile(file.path),
+  });
+  try {
+    final response = await dio.post("/api/document/exportDoc", data: formData);
+    if (response.statusCode == 200) {
+      return response.data["file"];
+    } else {
+      log('${response.statusCode} : ${response.data.toString()}');
+      throw response.statusCode!;
+    }
+  } catch (error) {
+    log(error.toString());
+  }
+  return null;
+}
