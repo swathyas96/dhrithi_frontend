@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'OCR',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData.light(useMaterial3: true),
       home: const Home(),
     );
@@ -36,6 +37,8 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final SvgPicture fileUploadSVG = SvgPicture.asset('assets/file_upload.svg',
       semanticsLabel: 'File Upload SVG');
+  final SvgPicture logoSVG =
+      SvgPicture.asset('assets/logo2.svg', semanticsLabel: 'logo SVG');
 
   /// Returns void.
   FilePickerResult? result;
@@ -77,7 +80,25 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text("ധൃതി")),
+        appBar: AppBar(
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(height: 80, child: Image.asset('assets/logo.png')),
+              Container(
+                  decoration: const BoxDecoration(color: Colors.white),
+                  padding: const EdgeInsets.all(8),
+                  child: const Text("ധൃതി ഒസിആർ",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 32))),
+              const SizedBox(),
+            ],
+          ),
+          backgroundColor: Colors.white,
+        ),
         body: isUploading
             ? const Center(child: CircularProgressIndicator())
             : Center(
